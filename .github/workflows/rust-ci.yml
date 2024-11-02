@@ -1,0 +1,51 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - main               # Exécute le workflow sur les push vers la branche main
+      - "feature/*"        # Exécute le workflow sur les push vers toutes les branches de fonctionnalités
+  pull_request:
+    branches:
+      - main               # Exécute le workflow sur les pull requests ciblant la branche main
+  workflow_dispatch:       # Permet de déclencher manuellement le workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      RUSTFLAGS: "-D warnings"       # Traite les avertissements comme des erreurs
+      CARGO_TERM_COLOR: always       # Assure une sortie en couleur dans les logs CI
+
+    steps:
+      # Étape 1 : Cloner le dépôt
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Étape 2 : Installer Rust
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable          # Utilise la version stable de Rust
+
+      # Étape 3 : Vérification du format avec cargo fmt
+      - name: Format check
+        run: cargo fmt --check        # Vérifie que le code est bien formaté
+          
+      # Étape 4 : Linting avec Clippy pour détecter les erreurs et améliorer le code
+      - name: Run Clippy for linting
+        run: cargo clippy -- -D warnings   # Utilise Clippy pour le linting et échoue si avertissements
+
+      # Étape 5 : Compilation du projet
+      - name: Build project
+        run: cargo build --verbose         # Compile le code avec sortie détaillée
+
+      # Étape 6 : Exécution des tests
+      - name: Run tests
+        run: cargo test --verbose          # Exécute les tests avec une sortie détaillée
+
+      # Étape 7 : Génération de la documentation
+      - name: Generate documentation
+        run: cargo doc --no-deps           # Génère la documentation sans les dépendances
+        if: success()                      # Exécute cette étape seulement si les étapes précédentes réussissent
